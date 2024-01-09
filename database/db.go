@@ -1,17 +1,23 @@
 package database
 
 import (
-	"database/sql"
 	"log"
 
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 )
 
+// TODO: remember to migrate this and do the session stuff next
+type User struct {
+	gorm.Model
+	Email    string
+	Password string
+}
+
 type ShoppingList struct {
 	gorm.Model
 	Name        string
-	Description sql.NullString
+	Description *string
 	ListItems   []ListItem
 }
 
@@ -30,6 +36,8 @@ var DB *gorm.DB
 
 // sets up the DB and returns, but also as a side effect sets the DB global variable
 func SetupDB() (*gorm.DB, error) {
+
+	// pretty much temporary config
 	dsn := "host=localhost user=postgres password=postgres dbname=shopping_cart port=5432"
 
 	db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{})

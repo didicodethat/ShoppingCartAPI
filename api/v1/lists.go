@@ -32,6 +32,19 @@ func ListItemsSUM(c *gin.Context) {
 	c.JSON(200, result)
 }
 
+func CreateList(c *gin.Context) {
+	var shoppingList database.ShoppingList
+	c.Bind(&shoppingList)
+	database.DB.Create(&shoppingList)
+	c.JSON(http.StatusCreated, shoppingList)
+}
+
+func GetLists(c *gin.Context) {
+	var shoppingLists []database.ShoppingList
+	database.DB.Model(&database.ShoppingList{}).Scan(&shoppingLists)
+	c.JSON(http.StatusOK, shoppingLists)
+}
+
 func CreateItem(c *gin.Context) {
 	var listItem database.ListItem
 	listId, err := listIdParse(c)
