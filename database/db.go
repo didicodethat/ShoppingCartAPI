@@ -7,17 +7,11 @@ import (
 	"gorm.io/gorm"
 )
 
-// TODO: remember to migrate this and do the session stuff next
-type User struct {
-	gorm.Model
-	Email    string
-	Password string
-}
-
 type ShoppingList struct {
 	gorm.Model
 	Name        string
 	Description *string
+	UserID      uint
 	ListItems   []ListItem
 }
 
@@ -46,7 +40,7 @@ func SetupDB() (*gorm.DB, error) {
 		return nil, err
 	}
 
-	err = db.AutoMigrate(&ShoppingList{}, &ListItem{})
+	err = db.AutoMigrate(&User{}, &ShoppingList{}, &ListItem{})
 
 	if err != nil {
 		return nil, err

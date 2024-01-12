@@ -1,2 +1,5 @@
 key,en-us,pt-br
-WrongParamType," /lists/:listId/items => listId must be a unsigned integer",/lists/:listId/items => listId deve ser um número inteiro positivo
+WrongParamType," /lists/:listId/items => listId must be a unsigned integer.",/lists/:listId/items => listId deve ser um número inteiro positivo.
+WrongCredentials, "The given credentials are wrong.", "As credenciais informadas não estão presentes no sistema."
+PasswordConfirmationMismatch, "Password and password confirmation don't match.", "Senha e confirmação de senhão não são iguais."
+RestrictedArea, "This is a restricted area", "Esta é uma area restrita."

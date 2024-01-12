@@ -74,3 +74,5 @@ func GetItems(c *gin.Context) {
 	database.DB.Select([]string{"id", "name", "description", "amount", "unitary_price"}).Table("list_items").Where("shopping_list_id = ?", listId).Scan(&listItems)
 	c.JSON(http.StatusOK, listItems)
 }
+
+// TODO: Create the patch and delete routes.

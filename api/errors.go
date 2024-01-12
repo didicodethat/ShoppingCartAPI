@@ -12,7 +12,7 @@ type ApiError struct {
 	Message string
 }
 
-func (k *ApiError) Error() string {
+func (k ApiError) Error() string {
 	return fmt.Sprintf(`ApiError: {Type: "%s", Message: "%s"}`, k.Type, k.Message)
 }
 
@@ -20,20 +20,23 @@ type KeyNotFoundError struct {
 	Key string
 }
 
-func (k *KeyNotFoundError) Error() string {
+func (k KeyNotFoundError) Error() string {
 	return fmt.Sprintf(`couldn't find the error message with the key "%s"`, k.Key)
 }
 
 type PoorlyFormattedCSV struct{}
 
-func (k *PoorlyFormattedCSV) Error() string {
+func (k PoorlyFormattedCSV) Error() string {
 	return fmt.Sprintf(`This CSV is poorly formatted, it should have at least 2 columns on every row`)
 }
 
 var UndefinedApiError = ApiError{Type: "UndefinedApiError", Message: "This error has no description setup"}
 
 const (
-	ApiErrorWrongParamType = "WrongParamType"
+	ApiErrorWrongParamType          = "WrongParamType"
+	ApiRestrictedArea               = "RestrictedArea"
+	ApiWrongCredentials             = "WrongCredentials"
+	ApiPasswordConfirmationMismatch = "PasswordConfirmationMismatch"
 )
 
 func getErrorMessages() ([][]string, error) {
