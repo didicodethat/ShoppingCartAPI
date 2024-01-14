@@ -8,8 +8,8 @@ import (
 )
 
 type ApiError struct {
-	Type    string
-	Message string
+	Type    string `json:"type"`
+	Message string `json:"message"`
 }
 
 func (k ApiError) Error() string {
@@ -37,6 +37,9 @@ const (
 	ApiRestrictedArea               = "RestrictedArea"
 	ApiWrongCredentials             = "WrongCredentials"
 	ApiPasswordConfirmationMismatch = "PasswordConfirmationMismatch"
+	ApiEntityNotFound               = "EntityNotFound"
+	ApiForbidden                    = "Forbidden"
+	ApiDuplicatedUserEmail          = "DuplicatedUserEmail"
 )
 
 func getErrorMessages() ([][]string, error) {

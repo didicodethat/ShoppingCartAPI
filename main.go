@@ -21,14 +21,14 @@ var SecretsToml []byte
 func Authenticated() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		session := sessions.Default(c)
-		userID := session.Get("user_id")
+		userID := session.Get(v1.SessionUserIDKey)
 		if userID == nil {
 			c.JSON(http.StatusUnauthorized, api.GetApiError(api.ApiRestrictedArea))
 			return
 		}
 		var user database.User
 		database.DB.Table("users").Where("id = ?", userID).First(&user)
-		c.Set("user", user)
+		c.Set(v1.ContextUser, user)
 		c.Next()
 	}
 }
@@ -45,15 +45,23 @@ func main() {
 	r.Use(sessions.Sessions("main_session", store))
 	v1Routes := r.Group("/v1")
 	{
-		// TODO: Add the bindings to the login/registration routes
+		authRoutes := v1Routes.Group("/auth")
+		{
+			authRoutes.PUT("/register", v1.CreateUser)
+			authRoutes.POST("/login", v1.LogIn)
+		}
+
 		listRoutes := v1Routes.Group("/lists")
 		listRoutes.Use(Authenticated())
 		{
 			listRoutes.GET("/", v1.GetLists)
 			listRoutes.PUT("/", v1.CreateList)
-			listRoutes.GET("/:listId/sum", v1.ListItemsSUM)
-			listRoutes.GET("/:listId/items", v1.GetItems)
-			listRoutes.PUT("/:listId/items", v1.CreateItem)
+			listItemRoutes := listRoutes.Group("/:listId")
+			listItemRoutes.Use(v1.LoadList())
+			{
+				listItemRoutes.GET("/", v1.GetList)
+				listItemRoutes.PUT("/items", v1.CreateItem)
+			}
 		}
 	}
 

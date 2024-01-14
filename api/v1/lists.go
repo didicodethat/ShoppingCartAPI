@@ -9,70 +9,97 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-// Parses the list id and adds a JSON error to the context as a side effect for convinience
-func listIdParse(c *gin.Context) (*uint, error) {
-	listId, err := strconv.ParseUint(c.Param("listId"), 10, 64)
-	if err != nil {
-		errorMessage := api.GetApiError(api.ApiErrorWrongParamType)
+const (
+	ContextShoppingList = "ShopppingList"
+	ContextUser         = "User"
+)
 
-		c.JSON(http.StatusBadRequest, errorMessage)
-		return nil, &errorMessage
+func userFromContext(c *gin.Context) database.User {
+	user, ok := c.Get(ContextUser)
+
+	if !ok {
+		panic("Only use userFromContext in authenticaded areas, make sure to set the user parameter on a middleware before this one")
 	}
-	ulistId := uint(listId)
-	return &ulistId, nil
+
+	return user.(database.User)
 }
 
-func ListItemsSUM(c *gin.Context) {
-	var result float32
-	listId, err := listIdParse(c)
-	if err != nil {
-		return
+func shoppingListFromContext(c *gin.Context) database.ShoppingList {
+	list, ok := c.Get(ContextShoppingList)
+
+	if !ok {
+		panic("Only use shoppingListFromContext in authenticaded areas, make sure to set the user parameter on a middleware before this one")
 	}
-	database.DB.Raw(`SELECT SUM(amount * unitary_price) from list_items where shopping_list_id = ?`, listId).Scan(&result)
-	c.JSON(200, result)
+
+	return list.(database.ShoppingList)
+}
+
+// Middleware that loads the current list based on the :listId param of the url
+// Only call it after authenticated or if the user variable is set on the Context.
+// it will also only load the list if the user has access to the current list
+func LoadList() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		listId, err := strconv.ParseUint(c.Param("listId"), 10, 64)
+		user := userFromContext(c)
+
+		if err != nil {
+			errorMessage := api.GetApiError(api.ApiErrorWrongParamType)
+			c.JSON(http.StatusBadRequest, errorMessage)
+			return
+		}
+
+		list, err := database.FindShoppingList(uint(listId))
+
+		if err != nil {
+			errorMessage := api.GetApiError(api.ApiEntityNotFound)
+			c.JSON(http.StatusBadRequest, errorMessage)
+			return
+		}
+
+		if !list.UserHasAccess(user.ID) {
+			errorMessage := api.GetApiError(api.ApiForbidden)
+			c.JSON(http.StatusForbidden, errorMessage)
+			return
+		}
+
+		c.Set(ContextShoppingList, list)
+
+		c.Next()
+	}
 }
 
 func CreateList(c *gin.Context) {
-	var shoppingList database.ShoppingList
-	c.Bind(&shoppingList)
-	database.DB.Create(&shoppingList)
+	var shoppingListRequest database.CreateShoppingListRequest
+	c.Bind(&shoppingListRequest)
+	shoppingList := database.ShoppingList{
+		Name:        shoppingListRequest.Name,
+		Description: shoppingListRequest.Description,
+	}
+	shoppingList.Owner = userFromContext(c)
+	if err := database.DB.Create(&shoppingList).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, err)
+		return
+	}
 	c.JSON(http.StatusCreated, shoppingList)
 }
 
 func GetLists(c *gin.Context) {
-	var shoppingLists []database.ShoppingList
-	database.DB.Model(&database.ShoppingList{}).Scan(&shoppingLists)
-	c.JSON(http.StatusOK, shoppingLists)
+	user := userFromContext(c)
+	c.JSON(http.StatusOK, user.OwnedLists())
 }
 
 func CreateItem(c *gin.Context) {
 	var listItem database.ListItem
-	listId, err := listIdParse(c)
-	if err != nil {
-		return
-	}
 	c.Bind(&listItem)
-	listItem.ShoppingListID = *listId
+	list := shoppingListFromContext(c)
+	listItem.OwnerList = list
+
 	database.DB.Create(&listItem)
 	c.JSON(http.StatusCreated, listItem)
 }
 
-func GetItems(c *gin.Context) {
-	type Result struct {
-		ID           uint
-		Name         string
-		Description  string
-		Amount       float32
-		UnitaryPrice float32
-	}
-	var listItems []Result
-	listId, err := listIdParse(c)
-	if err != nil {
-		return
-	}
-
-	database.DB.Select([]string{"id", "name", "description", "amount", "unitary_price"}).Table("list_items").Where("shopping_list_id = ?", listId).Scan(&listItems)
-	c.JSON(http.StatusOK, listItems)
+func GetList(c *gin.Context) {
+	c.JSON(http.StatusOK, shoppingListFromContext(c))
 }
 
 // TODO: Create the patch and delete routes.

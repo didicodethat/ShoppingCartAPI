@@ -7,24 +7,6 @@ import (
 	"gorm.io/gorm"
 )
 
-type ShoppingList struct {
-	gorm.Model
-	Name        string
-	Description *string
-	UserID      uint
-	ListItems   []ListItem
-}
-
-type ListItem struct {
-	gorm.Model
-	Name           string
-	Description    string
-	Amount         float32
-	UnitaryPrice   float32
-	Order          int32
-	ShoppingListID uint
-}
-
 // Make sure to only use it after calling the database.SetupDB() function
 var DB *gorm.DB
 

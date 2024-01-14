@@ -3,22 +3,26 @@ package v1
 import (
 	"Business/ShoppingCart/api"
 	"Business/ShoppingCart/database"
+	"errors"
 	"net/http"
 	"net/mail"
 
 	"github.com/gin-contrib/sessions"
 	"github.com/gin-gonic/gin"
+	"gorm.io/gorm"
 )
 
+const SessionUserIDKey = "user_id"
+
 type LoginAttempt struct {
-	Email    string
-	Password string
+	Email    string `form:"email" json:"email"`
+	Password string `form:"password" json:"password"`
 }
 
 type CreateUserAttempt struct {
-	Email           string
-	Password        string
-	ConfirmPassword string
+	Email           string `form:"email" json:"email"`
+	Password        string `form:"password" json:"password"`
+	ConfirmPassword string `form:"confirm_password" json:"confirm_password"`
 }
 
 func (c *CreateUserAttempt) toUser() (database.User, error) {
@@ -32,8 +36,8 @@ func (c *CreateUserAttempt) toUser() (database.User, error) {
 		return result, api.GetApiError(api.ApiPasswordConfirmationMismatch)
 	}
 
-	result.SetPassword(c.Password)
-	return result, nil
+	err = result.SetPassword(c.Password)
+	return result, err
 }
 
 func CreateUser(c *gin.Context) {
@@ -44,9 +48,18 @@ func CreateUser(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, err)
 		return
 	}
-	database.DB.Create(&user)
+	result := database.DB.Create(&user)
 
-	c.JSON(http.StatusOK, gin.H{"status": "ok"})
+	if result.Error != nil {
+		if errors.Is(result.Error, gorm.ErrDuplicatedKey) {
+			c.JSON(http.StatusConflict, api.GetApiError(api.ApiDuplicatedUserEmail))
+			return
+		}
+		c.JSON(http.StatusInternalServerError, api.UndefinedApiError)
+		return
+	}
+
+	c.JSON(http.StatusCreated, gin.H{"status": "ok"})
 }
 
 func LogIn(c *gin.Context) {
@@ -54,6 +67,7 @@ func LogIn(c *gin.Context) {
 	var loginAttempt LoginAttempt
 	var user database.User
 	c.Bind(&loginAttempt)
+
 	database.DB.Model(&database.User{}).Where("email = ?", loginAttempt.Email).First(&user)
 
 	if user.ComparePassword(loginAttempt.Password) != nil {
@@ -61,7 +75,8 @@ func LogIn(c *gin.Context) {
 		return
 	}
 
-	session.Set("user_id", user.ID)
+	session.Set(SessionUserIDKey, user.ID)
+	session.Save()
 
 	c.JSON(http.StatusAccepted, gin.H{"status": "ok"})
 }

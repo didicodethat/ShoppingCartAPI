@@ -1,5 +1,8 @@
 key,en-us,pt-br
-WrongParamType," /lists/:listId/items => listId must be a unsigned integer.",/lists/:listId/items => listId deve ser um número inteiro positivo.
-WrongCredentials, "The given credentials are wrong.", "As credenciais informadas não estão presentes no sistema."
-PasswordConfirmationMismatch, "Password and password confirmation don't match.", "Senha e confirmação de senhão não são iguais."
-RestrictedArea, "This is a restricted area", "Esta é uma area restrita."
+WrongParamType,One or many params on the URL haven't been sent correctly.,Um ou mais parametros na URL não foram enviados corretamente.
+WrongCredentials,The given credentials are wrong.,As credenciais informadas não estão presentes no sistema.
+PasswordConfirmationMismatch,Password and password confirmation don't match.,Senha e confirmação de senhão não são iguais.
+RestrictedArea,This is a restricted area.,Esta é uma area restrita.
+EntityNotFound,Entity not Found.,Item não encontrado.
+Forbidden,Forbidden.,Sem Permissão.
+DuplicatedUserEmail,There already is a user assigned to this email.,Este email já está cadastrado.
